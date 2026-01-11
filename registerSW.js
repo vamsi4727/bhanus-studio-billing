@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/bhanus-studio-billing/sw.js', { scope: '/bhanus-studio-billing/' })})}
