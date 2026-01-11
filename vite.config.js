@@ -16,8 +16,8 @@ export default defineConfig({
         theme_color: '#000000',
         background_color: '#ffffff',
         display: 'standalone',
-        start_url: '/',
-        scope: '/',
+        start_url: '/bhanus-studio-billing/',
+        scope: '/bhanus-studio-billing/',
         icons: [
           {
             src: 'logo.png',
@@ -34,7 +34,8 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        maximumFileSizeToCacheInBytes: 4194304 // 4 MB to accommodate logo.png (3.1 MB)
       }
     })
   ],
