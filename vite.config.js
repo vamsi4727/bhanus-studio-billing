@@ -16,8 +16,8 @@ export default defineConfig({
         theme_color: '#000000',
         background_color: '#ffffff',
         display: 'standalone',
-        start_url: '/bhanus-studio-billing/',
-        scope: '/bhanus-studio-billing/',
+        start_url: '/',
+        scope: '/',
         icons: [
           {
             src: 'logo.png',
@@ -39,5 +39,9 @@ export default defineConfig({
       }
     })
   ],
-  base: '/bhanus-studio-billing/' // GitHub Pages base path
+  base: '/', // Custom domain - root path
+  server: {
+    host: '0.0.0.0', // Allow access from network devices
+    port: 5173
+  }
 })

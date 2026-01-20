@@ -7,7 +7,7 @@ export default function BillForm({ onSave }) {
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
-    items: [{ sno: 1, description: '', qty: 1, rate: 0, amount: 0 }]
+    items: [{ sno: 1, description: '', qty: '', rate: '', amount: 0 }]
   });
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -40,8 +40,8 @@ export default function BillForm({ onSave }) {
     const newItem = {
       sno: formData.items.length + 1,
       description: '',
-      qty: 1,
-      rate: 0,
+      qty: '',
+      rate: '',
       amount: 0
     };
     setFormData({
@@ -105,7 +105,7 @@ export default function BillForm({ onSave }) {
       setFormData({
         customerName: '',
         customerPhone: '',
-        items: [{ sno: 1, description: '', qty: 1, rate: 0, amount: 0 }]
+        items: [{ sno: 1, description: '', qty: '', rate: '', amount: 0 }]
       });
 
       // Get next invoice number
@@ -126,29 +126,29 @@ export default function BillForm({ onSave }) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-6">Create New Bill</h2>
+    <div className="max-w-4xl mx-auto px-4 py-6 md:p-4">
+      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Create New Bill</h2>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
         {/* Invoice Info */}
-        <div className="bg-gray-50 p-4 rounded">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Invoice Number</label>
+              <label className="block text-sm font-medium mb-1.5">Invoice Number</label>
               <input
                 type="text"
                 value={invoiceNumber}
                 disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-100"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-base"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Date</label>
+              <label className="block text-sm font-medium mb-1.5">Date</label>
               <input
                 type="text"
                 value={getCurrentDate()}
                 disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-100"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-base"
               />
             </div>
           </div>
@@ -158,7 +158,7 @@ export default function BillForm({ onSave }) {
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Customer Details</h3>
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1.5">
               Customer Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -166,36 +166,105 @@ export default function BillForm({ onSave }) {
               value={formData.customerName}
               onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-base focus:border-blue-500 focus:outline-none"
               placeholder="Enter customer name"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Customer Phone (Optional)</label>
+            <label className="block text-sm font-medium mb-1.5">Customer Phone (Optional)</label>
             <input
               type="tel"
               value={formData.customerPhone}
               onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-base focus:border-blue-500 focus:outline-none"
               placeholder="Enter phone number"
             />
           </div>
         </div>
 
-        {/* Items Table */}
+        {/* Items Section */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Items</h3>
             <button
               type="button"
               onClick={addItem}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-base font-medium"
             >
               + Add Item
             </button>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Card Layout */}
+          <div className="block md:hidden space-y-4">
+            {formData.items.map((item, index) => (
+              <div key={index} className="bg-gray-50 border border-gray-300 rounded-lg p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-600">Item #{item.sno}</span>
+                  {formData.items.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      className="px-3 py-1.5 bg-red-500 text-white rounded text-sm font-medium"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1.5 text-gray-700">Description</label>
+                  <input
+                    type="text"
+                    value={item.description}
+                    onChange={(e) => updateItem(index, 'description', e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-base focus:border-blue-500 focus:outline-none"
+                    placeholder="Item description"
+                    required
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5 text-gray-700">Quantity</label>
+                    <input
+                      type="number"
+                      value={item.qty}
+                      onChange={(e) => updateItem(index, 'qty', e.target.value)}
+                      min="0"
+                      step="0.01"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-base text-right font-semibold focus:border-blue-500 focus:outline-none"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5 text-gray-700">Rate (₹)</label>
+                    <input
+                      type="number"
+                      value={item.rate}
+                      onChange={(e) => updateItem(index, 'rate', e.target.value)}
+                      min="0"
+                      step="0.01"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-base text-right font-semibold focus:border-blue-500 focus:outline-none"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                
+                <div className="pt-2 border-t border-gray-300">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-600">Amount</span>
+                    <span className="text-lg font-bold text-gray-900">
+                      ₹{item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table Layout */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full border-collapse border border-gray-300">
               <thead>
                 <tr className="bg-gray-100">
@@ -228,7 +297,7 @@ export default function BillForm({ onSave }) {
                         onChange={(e) => updateItem(index, 'qty', e.target.value)}
                         min="0"
                         step="0.01"
-                        className="w-full px-2 py-1 border border-gray-200 rounded text-right"
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded text-right font-semibold focus:border-blue-500 focus:outline-none"
                       />
                     </td>
                     <td className="border border-gray-300 px-3 py-2">
@@ -238,7 +307,7 @@ export default function BillForm({ onSave }) {
                         onChange={(e) => updateItem(index, 'rate', e.target.value)}
                         min="0"
                         step="0.01"
-                        className="w-full px-2 py-1 border border-gray-200 rounded text-right"
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded text-right font-semibold focus:border-blue-500 focus:outline-none"
                       />
                     </td>
                     <td className="border border-gray-300 px-3 py-2 text-right">
@@ -262,19 +331,19 @@ export default function BillForm({ onSave }) {
           </div>
 
           {/* Total Amount */}
-          <div className="flex justify-end mt-4">
-            <div className="text-lg font-bold">
+          <div className="flex justify-end mt-4 pt-4 border-t-2 border-gray-300">
+            <div className="text-lg md:text-xl font-bold">
               Total Amount: ₹{calculateTotal().toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
         </div>
 
         {/* Submit Button */}
-        <div className="flex justify-end gap-4">
+        <div className="flex justify-end gap-4 pt-2">
           <button
             type="submit"
             disabled={isSaving}
-            className="px-6 py-2 bg-black text-white rounded hover:bg-gray-800 disabled:opacity-50"
+            className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 text-base font-medium min-h-[44px]"
           >
             {isSaving ? 'Saving...' : 'Save Bill'}
           </button>

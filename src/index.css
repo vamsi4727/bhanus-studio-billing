@@ -8,3 +8,35 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Improve number input display on iOS */
+input[type="number"] {
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+  appearance: none;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Prevent zoom on input focus on iOS */
+input[type="text"],
+input[type="number"],
+input[type="tel"],
+textarea,
+select {
+  font-size: 16px !important;
+}
+
+@media screen and (min-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="tel"],
+  textarea,
+  select {
+    font-size: inherit;
+  }
+}
