@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Bhanus Studio Billing</title>
+    <script>
+      // GitHub Pages 404.html redirect for React Router
+      // Redirects all 404s to index.html, preserving the path
+      var pathSegmentsToKeep = 0; // Set to 1 if using project pages (e.g., /repo-name/)
+      
+      var l = window.location;
+      var path = l.pathname.split('/').slice(1);
+      var newPath = '/' + path.slice(pathSegmentsToKeep).join('/') + l.search + l.hash;
+      l.replace(l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') + newPath);
+    </script>
+  </head>
+  <body>
+    <p>Redirecting...</p>
+  </body>
+</html>
