@@ -23,39 +23,86 @@ export default function BillViewer({ bill, onBack }) {
   }
 
   const handleDownloadPNG = async () => {
-    if (!billRef.current) return;
+    if (!billRef.current) {
+      alert('Bill content not available. Please refresh the page.');
+      return;
+    }
 
     try {
       setIsGenerating(true);
       const blob = await generateBillPNG(billRef.current);
+      
+      if (!blob) {
+        throw new Error('Failed to generate PNG blob');
+      }
+      
       const filename = `bill-${bill.invoiceNumber}.png`;
-      downloadPNG(blob, filename);
+      
+      try {
+        downloadPNG(blob, filename);
+      } catch (downloadError) {
+        console.error('Error downloading PNG:', downloadError);
+        alert('Error downloading PNG. Please check browser console for details.');
+      }
     } catch (error) {
       console.error('Error generating PNG:', error);
-      alert('Error generating PNG. Please try again.');
+      alert(`Error generating PNG: ${error.message || 'Unknown error'}. Please check browser console for details.`);
     } finally {
       setIsGenerating(false);
     }
   };
 
   const handleSharePNG = async () => {
-    if (!billRef.current) return;
+    if (!billRef.current) {
+      alert('Bill content not available. Please refresh the page.');
+      return;
+    }
 
     try {
       setIsGenerating(true);
       const blob = await generateBillPNG(billRef.current);
+      
+      if (!blob) {
+        throw new Error('Failed to generate PNG blob');
+      }
+      
       const filename = `bill-${bill.invoiceNumber}.png`;
       
-      const shared = await sharePNG(blob, filename);
-      
-      if (!shared) {
-        // Fallback to download if share API is not available
-        downloadPNG(blob, filename);
-        alert('Share API not available. PNG downloaded instead.');
+      try {
+        const shared = await sharePNG(blob, filename);
+        
+        if (!shared) {
+          // Fallback to download if share API is not available
+          try {
+            downloadPNG(blob, filename);
+            
+            // Detect if we're on mobile or desktop
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+              alert('Share not available. PNG downloaded. You can share it from your Photos app.');
+            } else {
+              alert('PNG downloaded. On mobile devices, WhatsApp will appear in the share sheet. On Mac, you can manually share the downloaded file.');
+            }
+          } catch (downloadError) {
+            console.error('Error downloading PNG:', downloadError);
+            alert('Share failed and download also failed. Please check browser console for details.');
+          }
+        }
+      } catch (shareError) {
+        console.error('Error in share process:', shareError);
+        // Try to download as fallback
+        try {
+          downloadPNG(blob, filename);
+          alert('Share failed. PNG downloaded instead.');
+        } catch (downloadError) {
+          console.error('Fallback download also failed:', downloadError);
+          alert(`Share failed: ${shareError.message || 'Unknown error'}. Please check browser console.`);
+        }
       }
     } catch (error) {
-      console.error('Error sharing PNG:', error);
-      alert('Error sharing PNG. Please try again.');
+      console.error('Error generating PNG for share:', error);
+      alert(`Error generating PNG: ${error.message || 'Unknown error'}. Please check browser console for details.`);
     } finally {
       setIsGenerating(false);
     }
@@ -85,15 +132,13 @@ export default function BillViewer({ bill, onBack }) {
             {isGenerating ? 'Generating...' : 'Download PNG'}
           </button>
           
-          {navigator.share && (
-            <button
-              onClick={handleSharePNG}
-              disabled={isGenerating}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-            >
-              {isGenerating ? 'Generating...' : 'Share (WhatsApp)'}
-            </button>
-          )}
+          <button
+            onClick={handleSharePNG}
+            disabled={isGenerating}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+          >
+            {isGenerating ? 'Generating...' : 'Share (WhatsApp)'}
+          </button>
         </div>
       </div>
 
