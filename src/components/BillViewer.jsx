@@ -30,22 +30,27 @@ export default function BillViewer({ bill, onBack }) {
 
     try {
       setIsGenerating(true);
+      console.log('Starting PNG generation...');
+      
       const blob = await generateBillPNG(billRef.current);
       
       if (!blob) {
         throw new Error('Failed to generate PNG blob');
       }
       
+      console.log('PNG generated successfully, size:', blob.size);
       const filename = `bill-${bill.invoiceNumber}.png`;
       
       try {
         downloadPNG(blob, filename);
+        console.log('Download initiated');
       } catch (downloadError) {
         console.error('Error downloading PNG:', downloadError);
         alert('Error downloading PNG. Please check browser console for details.');
       }
     } catch (error) {
       console.error('Error generating PNG:', error);
+      console.error('Error stack:', error.stack);
       alert(`Error generating PNG: ${error.message || 'Unknown error'}. Please check browser console for details.`);
     } finally {
       setIsGenerating(false);

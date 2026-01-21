@@ -11,37 +11,78 @@ export async function generateBillPNG(element) {
       throw new Error('Element is required for PNG generation');
     }
     
-    const canvas = await html2canvas(element, {
+    // Wait for all images to load before capturing
+    const images = element.querySelectorAll('img');
+    await Promise.all(
+      Array.from(images).map((img) => {
+        if (img.complete) {
+          return Promise.resolve();
+        }
+        return new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            console.warn('Image load timeout:', img.src);
+            resolve(); // Continue even if image fails to load
+          }, 5000); // 5 second timeout per image
+          
+          img.onload = () => {
+            clearTimeout(timeout);
+            resolve();
+          };
+          img.onerror = () => {
+            clearTimeout(timeout);
+            console.warn('Image failed to load:', img.src);
+            resolve(); // Continue even if image fails
+          };
+        });
+      })
+    );
+    
+    // Add a timeout wrapper for html2canvas
+    const canvasPromise = html2canvas(element, {
       scale: 2, // Medium quality for iPhone viewing
       useCORS: true,
-      allowTaint: false,
-      logging: false,
+      allowTaint: true, // Allow tainted canvas if CORS fails
+      logging: true, // Enable logging for debugging
       backgroundColor: '#ffffff',
       width: element.scrollWidth,
       height: element.scrollHeight,
       onclone: (clonedDoc) => {
-        // Ensure images are loaded in cloned document
+        // Ensure images are loaded or hidden in cloned document
         const images = clonedDoc.querySelectorAll('img');
         images.forEach(img => {
-          if (!img.complete) {
+          if (!img.complete || img.naturalWidth === 0) {
+            // Hide broken images
             img.style.display = 'none';
           }
         });
       }
     });
+    
+    // Add timeout wrapper (30 seconds)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('PNG generation timeout after 30 seconds')), 30000);
+    });
+    
+    console.log('Starting html2canvas...');
+    const canvas = await Promise.race([canvasPromise, timeoutPromise]);
+    console.log('html2canvas completed');
 
     return new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to generate PNG blob'));
-          }
-        },
-        'image/png',
-        0.85 // Medium quality
-      );
+      try {
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to generate PNG blob'));
+            }
+          },
+          'image/png',
+          0.85 // Medium quality
+        );
+      } catch (error) {
+        reject(new Error(`Failed to convert canvas to blob: ${error.message}`));
+      }
     });
   } catch (error) {
     console.error('Error generating PNG:', error);
