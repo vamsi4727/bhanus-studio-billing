@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAllBillsSorted } from '../services/indexedDB.js';
+import BackupManager from '../components/BackupManager.jsx';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -79,6 +80,8 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      <BackupManager onRestoreDone={loadRecentBills} />
     </div>
   );
 }

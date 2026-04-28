@@ -10,6 +10,8 @@ A Progressive Web App (PWA) for creating and managing bills for Bhanus Studio. W
 - ✅ Generate PNG images of bills
 - ✅ Share bills via WhatsApp (Web Share API)
 - ✅ Download bills as PNG files
+- ✅ Backup/restore bills using JSON files
+- ✅ Optional Google Drive backup/restore
 - ✅ Offline functionality (PWA)
 - ✅ Local storage using IndexedDB
 - ✅ Responsive design for mobile and tablet
@@ -98,6 +100,13 @@ src/
 2. Click "Download PNG" to download the bill as PNG
 3. Click "Share (WhatsApp)" to share via Web Share API (opens WhatsApp on mobile)
 
+### Backup and Restore
+
+1. Open the Home page and go to the "Data Backup" section
+2. Use "Download Backup JSON" for local backups
+3. Use "Restore from JSON File" to restore bills
+4. Configure Google Drive to use cloud backup/restore buttons
+
 ## PWA Installation (iOS/iPad)
 
 1. Open the app in Safari
@@ -111,6 +120,20 @@ src/
 - Database name: `bhanusStudioDB`
 - Store name: `bills`
 - Key: `invoiceNumber`
+
+## Google Drive Setup (Optional)
+
+To enable cloud backups, add this env variable before running/building:
+
+```bash
+VITE_GOOGLE_CLIENT_ID=your_google_oauth_web_client_id
+```
+
+Notes:
+- Create an OAuth Web Client in Google Cloud Console
+- Enable Google Drive API
+- Add your site URL (and localhost for dev) in Authorized JavaScript origins
+- Backup files are uploaded as JSON files named `bhanus-bills-backup-<timestamp>.json`
 
 ## Invoice Number Logic
 

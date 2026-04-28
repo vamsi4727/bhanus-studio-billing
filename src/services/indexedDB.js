@@ -139,3 +139,20 @@ export async function getAllBillsSorted() {
   });
 }
 
+/**
+ * Replace all bills with a provided list (used by restore)
+ * @param {Array<Object>} bills - Bills to persist
+ * @returns {Promise<void>}
+ */
+export async function replaceAllBills(bills) {
+  const database = await initDB();
+  const tx = database.transaction(STORE_NAME, 'readwrite');
+  await tx.store.clear();
+
+  for (const bill of bills) {
+    await tx.store.put(bill);
+  }
+
+  await tx.done;
+}
+

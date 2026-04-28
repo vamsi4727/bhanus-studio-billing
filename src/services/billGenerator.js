@@ -6,6 +6,8 @@ import html2canvas from 'html2canvas';
  * @returns {Promise<Blob>} PNG blob
  */
 export async function generateBillPNG(element) {
+  let captureRoot = null;
+  let cleanupCaptureRoot = null;
   try {
     if (!element) {
       throw new Error('Element is required for PNG generation');
@@ -37,19 +39,53 @@ export async function generateBillPNG(element) {
       })
     );
     
-    // Compute full capture size so horizontally scrollable content is included.
-    let captureWidth = element.scrollWidth;
-    let captureHeight = element.scrollHeight;
-    const expandableSections = element.querySelectorAll('[data-export-expand="true"]');
+    // Clone to an offscreen container and expand widths before capture.
+    const offscreenContainer = document.createElement('div');
+    offscreenContainer.style.position = 'fixed';
+    offscreenContainer.style.left = '-100000px';
+    offscreenContainer.style.top = '0';
+    offscreenContainer.style.background = '#ffffff';
+    offscreenContainer.style.zIndex = '-1';
+    document.body.appendChild(offscreenContainer);
+
+    const clonedElement = element.cloneNode(true);
+    offscreenContainer.appendChild(clonedElement);
+
+    captureRoot = clonedElement;
+    cleanupCaptureRoot = () => {
+      if (offscreenContainer.parentNode) {
+        offscreenContainer.parentNode.removeChild(offscreenContainer);
+      }
+    };
+
+    let captureWidth = Math.max(clonedElement.scrollWidth, clonedElement.offsetWidth);
+
+    const expandableSections = clonedElement.querySelectorAll('[data-export-expand="true"]');
     expandableSections.forEach((section) => {
-      captureWidth = Math.max(captureWidth, section.scrollWidth);
+      const sectionWidth = Math.max(section.scrollWidth, section.offsetWidth);
+      captureWidth = Math.max(captureWidth, sectionWidth);
+
+      section.style.overflow = 'visible';
+      section.style.overflowX = 'visible';
+      section.style.maxWidth = 'none';
+      section.style.width = `${sectionWidth}px`;
+
       if (section.firstElementChild) {
-        captureWidth = Math.max(captureWidth, section.firstElementChild.scrollWidth);
+        section.firstElementChild.style.width = `${Math.max(
+          section.firstElementChild.scrollWidth,
+          section.firstElementChild.offsetWidth
+        )}px`;
       }
     });
 
+    captureRoot.style.maxWidth = 'none';
+    captureRoot.style.width = `${captureWidth}px`;
+    captureRoot.style.overflow = 'visible';
+
+    const captureHeight = Math.max(captureRoot.scrollHeight, captureRoot.offsetHeight);
+
     // Add a timeout wrapper for html2canvas
-    const canvasPromise = html2canvas(element, {
+    const canvasPromise = html2canvas(captureRoot, {
       scale: 2, // Medium quality for iPhone viewing
       useCORS: true,
       allowTaint: true, // Allow tainted canvas if CORS fails
@@ -59,29 +95,7 @@ export async function generateBillPNG(element) {
       height: captureHeight,
       windowWidth: captureWidth,
       windowHeight: captureHeight,
-      onclone: (clonedDoc) => {
-        // Ensure images are loaded or hidden in cloned document
-        const images = clonedDoc.querySelectorAll('img');
-        images.forEach(img => {
-          if (!img.complete || img.naturalWidth === 0) {
-            // Hide broken images
-            img.style.display = 'none';
-          }
-        });
-
-        // Expand horizontal scroll sections so capture includes full content.
-        const clonedExpandableSections = clonedDoc.querySelectorAll('[data-export-expand="true"]');
-        clonedExpandableSections.forEach((section) => {
-          section.style.overflow = 'visible';
-          section.style.overflowX = 'visible';
-          section.style.maxWidth = 'none';
-          section.style.width = `${section.scrollWidth}px`;
-
-          if (section.firstElementChild) {
-            section.firstElementChild.style.width = `${section.firstElementChild.scrollWidth}px`;
-          }
-        });
-      }
+      imageTimeout: 5000
     });
     
     // Add timeout wrapper (30 seconds)
@@ -113,6 +127,10 @@ export async function generateBillPNG(element) {
   } catch (error) {
     console.error('Error generating PNG:', error);
     throw error;
+  } finally {
+    if (cleanupCaptureRoot) {
+      cleanupCaptureRoot();
+    }
   }
 }
 
