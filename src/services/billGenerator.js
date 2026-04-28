@@ -37,6 +37,17 @@ export async function generateBillPNG(element) {
       })
     );
     
+    // Compute full capture size so horizontally scrollable content is included.
+    let captureWidth = element.scrollWidth;
+    let captureHeight = element.scrollHeight;
+    const expandableSections = element.querySelectorAll('[data-export-expand="true"]');
+    expandableSections.forEach((section) => {
+      captureWidth = Math.max(captureWidth, section.scrollWidth);
+      if (section.firstElementChild) {
+        captureWidth = Math.max(captureWidth, section.firstElementChild.scrollWidth);
+      }
+    });
+
     // Add a timeout wrapper for html2canvas
     const canvasPromise = html2canvas(element, {
       scale: 2, // Medium quality for iPhone viewing
@@ -44,8 +55,10 @@ export async function generateBillPNG(element) {
       allowTaint: true, // Allow tainted canvas if CORS fails
       logging: true, // Enable logging for debugging
       backgroundColor: '#ffffff',
-      width: element.scrollWidth,
-      height: element.scrollHeight,
+      width: captureWidth,
+      height: captureHeight,
+      windowWidth: captureWidth,
+      windowHeight: captureHeight,
       onclone: (clonedDoc) => {
         // Ensure images are loaded or hidden in cloned document
         const images = clonedDoc.querySelectorAll('img');
@@ -53,6 +66,19 @@ export async function generateBillPNG(element) {
           if (!img.complete || img.naturalWidth === 0) {
             // Hide broken images
             img.style.display = 'none';
+          }
+        });
+
+        // Expand horizontal scroll sections so capture includes full content.
+        const clonedExpandableSections = clonedDoc.querySelectorAll('[data-export-expand="true"]');
+        clonedExpandableSections.forEach((section) => {
+          section.style.overflow = 'visible';
+          section.style.overflowX = 'visible';
+          section.style.maxWidth = 'none';
+          section.style.width = `${section.scrollWidth}px`;
+
+          if (section.firstElementChild) {
+            section.firstElementChild.style.width = `${section.firstElementChild.scrollWidth}px`;
           }
         });
       }

@@ -63,7 +63,7 @@ export default function BillTemplate({ bill }) {
       </div>
 
       {/* Items Table */}
-      <div className="mb-6 sm:mb-8 overflow-x-auto">
+      <div className="mb-6 sm:mb-8 overflow-x-auto" data-export-expand="true">
         <table className="w-full border-collapse border border-black min-w-[500px]">
           <thead>
             <tr className="bg-gray-100">
