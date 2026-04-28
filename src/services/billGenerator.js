@@ -73,16 +73,22 @@ export async function generateBillPNG(element) {
     expandableSections.forEach((section) => {
       const sectionWidth = Math.max(section.scrollWidth, section.offsetWidth);
 
+      // Reset scroll position so capture is independent of on-screen horizontal scroll.
+      section.scrollLeft = 0;
+      section.scrollTop = 0;
+
       section.style.overflow = 'visible';
       section.style.overflowX = 'visible';
       section.style.maxWidth = 'none';
       section.style.width = `${sectionWidth}px`;
 
       if (section.firstElementChild) {
-        section.firstElementChild.style.width = `${Math.max(
+        const childWidth = Math.max(
           section.firstElementChild.scrollWidth,
           section.firstElementChild.offsetWidth
-        )}px`;
+        );
+        section.firstElementChild.style.width = `${childWidth}px`;
+        section.firstElementChild.style.minWidth = `${childWidth}px`;
       }
     });
 
