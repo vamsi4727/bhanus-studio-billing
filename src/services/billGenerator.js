@@ -1,5 +1,16 @@
 import html2canvas from 'html2canvas';
 
+function getMaxContentWidth(rootElement) {
+  let maxWidth = Math.max(rootElement.scrollWidth, rootElement.offsetWidth);
+  const allNodes = rootElement.querySelectorAll('*');
+
+  allNodes.forEach((node) => {
+    maxWidth = Math.max(maxWidth, node.scrollWidth, node.offsetWidth);
+  });
+
+  return maxWidth;
+}
+
 /**
  * Generate PNG image from bill HTML element
  * @param {HTMLElement} element - Bill template element
@@ -58,12 +69,9 @@ export async function generateBillPNG(element) {
       }
     };
 
-    let captureWidth = Math.max(clonedElement.scrollWidth, clonedElement.offsetWidth);
-
     const expandableSections = clonedElement.querySelectorAll('[data-export-expand="true"]');
     expandableSections.forEach((section) => {
       const sectionWidth = Math.max(section.scrollWidth, section.offsetWidth);
-      captureWidth = Math.max(captureWidth, sectionWidth);
 
       section.style.overflow = 'visible';
       section.style.overflowX = 'visible';
@@ -78,6 +86,8 @@ export async function generateBillPNG(element) {
       }
     });
 
+    // Recalculate full width after expansion to avoid iOS viewport clipping.
+    const captureWidth = getMaxContentWidth(captureRoot);
     captureRoot.style.maxWidth = 'none';
     captureRoot.style.width = `${captureWidth}px`;
     captureRoot.style.overflow = 'visible';
