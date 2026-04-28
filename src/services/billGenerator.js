@@ -53,14 +53,20 @@ export async function generateBillPNG(element) {
     // Clone to an offscreen container and expand widths before capture.
     const offscreenContainer = document.createElement('div');
     offscreenContainer.style.position = 'fixed';
-    offscreenContainer.style.left = '-100000px';
-    offscreenContainer.style.top = '0';
+    offscreenContainer.style.left = '0';
+    offscreenContainer.style.top = '-99999px'; // Off-screen above viewport
+    offscreenContainer.style.width = '960px';  // Match forExport template width
+    offscreenContainer.style.overflow = 'visible';
     offscreenContainer.style.background = '#ffffff';
     offscreenContainer.style.zIndex = '-1';
+    offscreenContainer.style.pointerEvents = 'none';
     document.body.appendChild(offscreenContainer);
 
     const clonedElement = element.cloneNode(true);
     offscreenContainer.appendChild(clonedElement);
+
+    // Force synchronous layout so scrollWidth/offsetWidth measurements are accurate
+    void clonedElement.getBoundingClientRect();
 
     captureRoot = clonedElement;
     cleanupCaptureRoot = () => {
