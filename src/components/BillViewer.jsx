@@ -1,9 +1,41 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { flushSync } from 'react-dom';
 import BillTemplate from './BillTemplate.jsx';
 import { generateBillPNG, downloadPNG, sharePNG } from '../services/billGenerator.js';
 
+/**
+ * Renders BillTemplate (forExport) into a temporary off-screen DOM node,
+ * returns the element and a cleanup function.
+ * Using createRoot + flushSync ensures the component is fully rendered
+ * (with all Tailwind styles applied) before html2canvas captures it.
+ */
+function renderExportElement(bill) {
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.left = '0';
+  container.style.top = '-99999px';
+  container.style.width = '960px';
+  container.style.overflow = 'visible';
+  container.style.pointerEvents = 'none';
+  container.style.zIndex = '-1';
+  document.body.appendChild(container);
+
+  const root = createRoot(container);
+  flushSync(() => {
+    root.render(<BillTemplate bill={bill} forExport />);
+  });
+
+  return {
+    element: container.firstElementChild,
+    cleanup: () => {
+      root.unmount();
+      if (container.parentNode) container.parentNode.removeChild(container);
+    },
+  };
+}
+
 export default function BillViewer({ bill, onBack }) {
-  const exportBillRef = useRef(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
   if (!bill) {
@@ -23,91 +55,51 @@ export default function BillViewer({ bill, onBack }) {
   }
 
   const handleDownloadPNG = async () => {
-    if (!exportBillRef.current) {
-      alert('Bill content not available. Please refresh the page.');
-      return;
-    }
-
     try {
       setIsGenerating(true);
-      console.log('Starting PNG generation...');
-      
-      const blob = await generateBillPNG(exportBillRef.current);
-      
-      if (!blob) {
-        throw new Error('Failed to generate PNG blob');
-      }
-      
-      console.log('PNG generated successfully, size:', blob.size);
-      const filename = `bill-${bill.invoiceNumber}.png`;
-      
+      const { element, cleanup } = renderExportElement(bill);
       try {
-        downloadPNG(blob, filename);
-        console.log('Download initiated');
-      } catch (downloadError) {
-        console.error('Error downloading PNG:', downloadError);
-        alert('Error downloading PNG. Please check browser console for details.');
+        const blob = await generateBillPNG(element);
+        if (!blob) throw new Error('Failed to generate PNG blob');
+        downloadPNG(blob, `bill-${bill.invoiceNumber}.png`);
+      } finally {
+        cleanup();
       }
     } catch (error) {
       console.error('Error generating PNG:', error);
-      console.error('Error stack:', error.stack);
-      alert(`Error generating PNG: ${error.message || 'Unknown error'}. Please check browser console for details.`);
+      alert(`Error generating PNG: ${error.message || 'Unknown error'}`);
     } finally {
       setIsGenerating(false);
     }
   };
 
   const handleSharePNG = async () => {
-    if (!exportBillRef.current) {
-      alert('Bill content not available. Please refresh the page.');
-      return;
-    }
-
     try {
       setIsGenerating(true);
-      const blob = await generateBillPNG(exportBillRef.current);
-      
-      if (!blob) {
-        throw new Error('Failed to generate PNG blob');
-      }
-      
-      const filename = `bill-${bill.invoiceNumber}.png`;
-      
+      const { element, cleanup } = renderExportElement(bill);
+      let blob;
       try {
-        const shared = await sharePNG(blob, filename);
-        
-        if (!shared) {
-          // Fallback to download if share API is not available
-          try {
-            downloadPNG(blob, filename);
-            
-            // Detect if we're on mobile or desktop
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            
-            if (isMobile) {
-              alert('Share not available. PNG downloaded. You can share it from your Photos app.');
-            } else {
-              alert('PNG downloaded. On mobile devices, WhatsApp will appear in the share sheet. On Mac, you can manually share the downloaded file.');
-            }
-          } catch (downloadError) {
-            console.error('Error downloading PNG:', downloadError);
-            alert('Share failed and download also failed. Please check browser console for details.');
-          }
-        }
-      } catch (shareError) {
-        console.error('Error in share process:', shareError);
-        // Try to download as fallback
-        try {
-          downloadPNG(blob, filename);
-          alert('Share failed. PNG downloaded instead.');
-        } catch (downloadError) {
-          console.error('Fallback download also failed:', downloadError);
-          alert(`Share failed: ${shareError.message || 'Unknown error'}. Please check browser console.`);
+        blob = await generateBillPNG(element);
+        if (!blob) throw new Error('Failed to generate PNG blob');
+      } finally {
+        cleanup();
+      }
+
+      const filename = `bill-${bill.invoiceNumber}.png`;
+      const shared = await sharePNG(blob, filename);
+
+      if (!shared) {
+        downloadPNG(blob, filename);
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          alert('Share not available. PNG downloaded. You can share it from your Photos app.');
+        } else {
+          alert('PNG downloaded. On mobile, WhatsApp will appear in the share sheet.');
         }
       }
     } catch (error) {
       console.error('Error generating PNG for share:', error);
-      alert(`Error generating PNG: ${error.message || 'Unknown error'}. Please check browser console for details.`);
+      alert(`Error generating PNG: ${error.message || 'Unknown error'}`);
     } finally {
       setIsGenerating(false);
     }
@@ -127,7 +119,7 @@ export default function BillViewer({ bill, onBack }) {
             </button>
           )}
         </div>
-        
+
         <div className="flex gap-4">
           <button
             onClick={handleDownloadPNG}
@@ -136,7 +128,7 @@ export default function BillViewer({ bill, onBack }) {
           >
             {isGenerating ? 'Generating...' : 'Download PNG'}
           </button>
-          
+
           <button
             onClick={handleSharePNG}
             disabled={isGenerating}
@@ -147,24 +139,9 @@ export default function BillViewer({ bill, onBack }) {
         </div>
       </div>
 
-      {/* Bill Template */}
+      {/* Bill Template - visible view only */}
       <div>
         <BillTemplate bill={bill} />
-      </div>
-
-      {/* Dedicated export layout (offscreen, non-responsive) */}
-      <div
-        style={{
-          position: 'fixed',
-          left: '-100000px',
-          top: 0,
-          pointerEvents: 'none',
-          zIndex: -1
-        }}
-      >
-        <div ref={exportBillRef}>
-          <BillTemplate bill={bill} forExport />
-        </div>
       </div>
 
       {/* Print-friendly styles */}
@@ -178,4 +155,3 @@ export default function BillViewer({ bill, onBack }) {
     </div>
   );
 }
-
