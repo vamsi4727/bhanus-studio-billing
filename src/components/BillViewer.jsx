@@ -3,7 +3,7 @@ import BillTemplate from './BillTemplate.jsx';
 import { generateBillPNG, downloadPNG, sharePNG } from '../services/billGenerator.js';
 
 export default function BillViewer({ bill, onBack }) {
-  const billRef = useRef(null);
+  const exportBillRef = useRef(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
   if (!bill) {
@@ -23,7 +23,7 @@ export default function BillViewer({ bill, onBack }) {
   }
 
   const handleDownloadPNG = async () => {
-    if (!billRef.current) {
+    if (!exportBillRef.current) {
       alert('Bill content not available. Please refresh the page.');
       return;
     }
@@ -32,7 +32,7 @@ export default function BillViewer({ bill, onBack }) {
       setIsGenerating(true);
       console.log('Starting PNG generation...');
       
-      const blob = await generateBillPNG(billRef.current);
+      const blob = await generateBillPNG(exportBillRef.current);
       
       if (!blob) {
         throw new Error('Failed to generate PNG blob');
@@ -58,14 +58,14 @@ export default function BillViewer({ bill, onBack }) {
   };
 
   const handleSharePNG = async () => {
-    if (!billRef.current) {
+    if (!exportBillRef.current) {
       alert('Bill content not available. Please refresh the page.');
       return;
     }
 
     try {
       setIsGenerating(true);
-      const blob = await generateBillPNG(billRef.current);
+      const blob = await generateBillPNG(exportBillRef.current);
       
       if (!blob) {
         throw new Error('Failed to generate PNG blob');
@@ -148,8 +148,23 @@ export default function BillViewer({ bill, onBack }) {
       </div>
 
       {/* Bill Template */}
-      <div ref={billRef}>
+      <div>
         <BillTemplate bill={bill} />
+      </div>
+
+      {/* Dedicated export layout (offscreen, non-responsive) */}
+      <div
+        style={{
+          position: 'fixed',
+          left: '-100000px',
+          top: 0,
+          pointerEvents: 'none',
+          zIndex: -1
+        }}
+      >
+        <div ref={exportBillRef}>
+          <BillTemplate bill={bill} forExport />
+        </div>
       </div>
 
       {/* Print-friendly styles */}
